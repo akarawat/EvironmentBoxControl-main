@@ -3,7 +3,7 @@
  *************************************************************/
 #define BLYNK_TEMPLATE_ID "TMPL2RyOZlTf"
 #define BLYNK_DEVICE_NAME "ESP8266 DTH"
-#define BLYNK_AUTH_TOKEN "lA37jFm1oDbG7z0fmBHZJxV_ruBpLObW";
+#define BLYNK_AUTH_TOKEN "!!!!!!!!!!!!!!!!!";
 
 #define BLYNK_PRINT Serial
 
@@ -15,7 +15,6 @@ SoftwareSerial NodeSerial(14, 12); // ขา Rx(D5), Tx(D6)
 
 char auth[] = BLYNK_AUTH_TOKEN;
 
-//needed for library
 #include <DNSServer.h>
 #include <ESP8266WebServer.h>
 #include <WiFiManager.h>         //https://github.com/tzapu/WiFiManager
@@ -93,15 +92,11 @@ void loop()
   timer.run();
   int count = 0;
 
-  // Reset the network
-//  Serial.print(digitalRead(TRIGGER_PIN));
-//  delay(1000);
   while (digitalRead(TRIGGER_PIN) == LOW) {
     delay(100);
     count++;
     Serial.println(count);
     if (count > 30) {
-      //ESP.eraseConfig();
       WiFi.disconnect();
       Serial.println("|Reset Wifi|");
       NodeSerial.print("|Reset Wifi|");
