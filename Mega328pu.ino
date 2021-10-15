@@ -15,6 +15,7 @@
   - อุณหภูมิ
   - ความชื้น
   - ระดับน้ำ (ใช้วิธี ตั้งเวลาเปลี่ยนน้ำทิ้ง ปิด/เปิด อัตโนมัติ)
+  - กำหนดให้ Valve ให้เปิดค้างตาม Sec_time โดยขั้นต่ำที่ 60 วินาที
 
 */
 #include <avr/wdt.h>
@@ -41,23 +42,23 @@ String eep_curtime = "000000";
 const byte ROWS = 4; //four rows
 const byte COLS = 4; //four columns
 /*for Sticker Key*/
-/*
-  char keys[ROWS][COLS] = {
+
+char keys[ROWS][COLS] = {
   {'1', '4', '7', '*'},
   {'2', '5', '8', '0'},
   {'3', '6', '9', '#'},
   {'A', 'B', 'C', 'D'}
-  };
-*/
-/*for PCB Key*/
+};
 
-char keys[ROWS][COLS] = {
+/*for PCB Key*/
+/*
+  char keys[ROWS][COLS] = {
   {'1', '2', '3', 'A'},
   {'4', '5', '6', 'B'},
   {'7', '8', '9', 'C'},
   {'*', '0', '#', 'D'}
-};
-
+  };
+*/
 byte rowPins[ROWS] = {5, 4, 3, 2}; //connect to the row pinouts of the keypad
 byte colPins[COLS] = {9, 8, 7, 6}; //connect to the column pinouts of the keypad
 
@@ -497,6 +498,9 @@ String getValue(String data, char separator, int index)
   return found > index ? data.substring(strIndex[0], strIndex[1]) : "";
 }
 
+int chkCount = 0;
+bool chkFlgMin;
+String chkTxt = "";
 void GetClock() {
   activetime = (millis() / 1000) - starttime;
   if (prevoustime < activetime)
@@ -549,12 +553,41 @@ void GetClock() {
   txtTime = hh + ":" + mm + ":" + ss;
   if (!setting) {
     lcd.setCursor(0, 0); lcd.print("VRU.ME.R62 " + txtTime);
+
     //ตั้งเวลาเปิดปิดน้ำ
     String txtNow = hh + mm;
-    if (txtNow == eep_onvalve) {
+    String txtNowss = hh + mm + ss;
+
+    /* //Flow เดิมทำงาน Fix 1 นาที
+      if (txtNow == eep_onvalve) {
       valve = true;
-    } else {
+      } else {
       valve = false;
+      }
+    */
+
+    if (txtNowss != chkTxt) { // ให้ตรวจสอบเฉพาะในวินาทีนั้นๆเท่านั้น ไม่งั้นจะทำงานตาม Clock ของ Crystal
+      chkTxt = txtNowss;
+      //-->Serial.println(txtTime);
+
+      // ปิดเมื่อถึงเวลาใน EEPROM
+      if (txtNow == eep_onvalve) {
+        chkFlgMin = true; //กำหนดให้เริ่มเปิด
+        //-->Serial.println("Set true");
+      }
+      if (chkFlgMin) {
+        if (chkCount < eep_temsec.toInt()) {
+          chkCount++; // นับไปจนกว่าจะครบวินาที
+          valve = true;
+          //-->Serial.println("CountV : " + String(chkCount));
+        } else { // เมื่อครบทำการรีเซตและปิด
+          chkCount = 0;
+          valve = false;
+          chkFlgMin = false;
+          //-->Serial.println("CountV : " + String(chkCount));
+        }
+      }
+
     }
 
   }
